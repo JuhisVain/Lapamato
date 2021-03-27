@@ -16,9 +16,11 @@ query_by_artist_album($artist, $album);
 
 sub play {
   my @yt_tracks = @_;
+  my $tracks_string = '';
   foreach (@yt_tracks) {
-    system 'mpv "https://music.youtube.com/watch?v=' . $_ . '" --ytdl --no-video';
+    $tracks_string .= '"https://music.youtube.com/watch?v=' . $_ . '" ';
   }
+  system 'mpv ' . $tracks_string . '--ytdl --no-video';
 }
 
 sub query_by_artist_album {
