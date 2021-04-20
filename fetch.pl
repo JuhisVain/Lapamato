@@ -1,12 +1,18 @@
 use strict;
 use warnings;
 use Getopt::Long;
+use Time::HiRes qw(time sleep);
+use String::Similarity;
+use JSON;
 use v5.22;
 
 my ($artist, $album, $song) = ('', '', '');
 GetOptions ('artist=s' => \$artist,
 	    'album=s' => \$album,
 	    'song=s' => \$song);
+
+my $valid_artist;
+my $valid_album;
 
 # Will need to be changed with a conf if this thing to be used by non-finnish:
 my $ytm_songs_block_id = qr/\\x22Kappaleet\\x22/;
@@ -57,14 +63,12 @@ sub query_by_artist_album {
   my $album = shift;
 
   my $artist_q = join '+', (split / /, $artist);
-  my @aq_discogs_ids = get_discogs_ids($artist_q);
-  my @aq_discogs_alb = get_discogs_album_ids($aq_discogs_ids[0], $album);
 
-  my @tracks = get_track_listing($aq_discogs_alb[0]);
-  say "1: " . $aq_discogs_ids[2] . " 2: " . $aq_discogs_alb[1] . " 3: " . $tracks[0] . "\ndone\n";
+  my @tracks = get_track_listing($artist, $album);
+  say "@tracks";
 
-  play(tracks_to_yttracks($aq_discogs_ids[2],
-			  sanitize_query_string($aq_discogs_alb[1]),
+  play(tracks_to_yttracks($valid_artist,
+			  sanitize_query_string($valid_album),
 			  @tracks));
 }
 
@@ -83,76 +87,76 @@ sub tracks_to_yttracks {
 
 sub sanitize_query_string {
   my $string = shift;
-  $string =~ s/\W+/ /igr;
+  $string =~ s/(\W|[0-9])+/ /igr;
 }
 
+sub sanitize_ytm_bs {
+  # Will probably break if some string composed mainly of punctuation
+  shift =~  s/(\\x[0-9a-f]{2}|(\W)+)/ /gr;
+}
+
+#Returns videoid:
 sub query_ytm {
-  my ($artist, $album, $song) = @_;
+  my ($artist, $album, $song) = @_; # album has been sanitized
+  say "query_ytm with $artist $album $song";
   my $query =
     "curl \"https://music.youtube.com/search?q="
-    . join('+', (split /-/,  $artist)) . "+"
+    . join('+', (split /-| /,  $artist)) . "+"
     . join('+', (split / /,  $album)) . "+"
     . join('+', (split / /,  $song))
     . "\" -A \"Mozilla/5.0 (X11; Linux x86_64; rv:86.0) Gecko/20100101 Firefox/86.0\"";
   my $res=`$query 2>&1`;
-  $res =~ m{$ytm_songs_block_id.*?videoID\\x22:\\x22(.*?)\\x22}is;
-  #say $query . ' results in: ' . $1 . "\n";
-  $1;
-}
+  #$res =~ m{$ytm_songs_block_id.*?videoID\\x22:\\x22(.*?)\\x22}is;
+  say "with query: $query";
+  #$1;
 
-sub get_discogs_album_ids {
-  #Takes strings artist, album. Returns (discogs_link_string1 album_name1 2 2 etc..).
-  my $artist = shift;
-  my $album = shift;
-  my $artist_q = join '+', (split / /, $artist);
-  my $album_q = join '+', (split / /, $album);
-  my $query =
-    "curl \"https://www.discogs.com/search/?limit=250&sort=score%2Cdesc&q="
-    . $artist_q . "+" . $album_q
-    . "&type=master&layout=sm\"";
-  my $res=`$query 2>&1`;
-  my @matches = ($res =~ m{<a class="search_result_title.*?href="(.*?)".*?>(.*?)</a>}sig);
+  my @options = ($res =~ m{accessibilityData\\x22:\\x7b\\x22label\\x22:\\x22.{1,100}?\\x22\\x7d\\x7d\\x7d\\x7d,\\x22contentPosition\\x22:\\x22MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_CENTERED\\x22,\\x22displayStyle\\x22:\\x22MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_PERSISTENT\\x22\\x7d\\x7d,\\x22flexColumns\\x22:\\x5b\\x7b\\x22musicResponsiveListItemFlexColumnRenderer\\x22:\\x7b\\x22text\\x22:\\x7b\\x22runs\\x22:\\x5b\\x7b\\x22text\\x22:\\x22(.{1,100}?)\\x22,\\x22navigationEndpoint\\x22:\\x7b\\x22clickTrackingParams\\x22:\\x22.{1,100}?(?:\\x3d)+\\x22,\\x22watchEndpoint\\x22:\\x7b\\x22videoId\\x22:\\x22(.{5,20}?)\\x22,\\x22(?:playlistId\\x22:\\x22.{1,100}?\\x22,\\x22)?watchEndpointMusicSupportedConfigs\\x22:\\x7b\\x22watchEndpointMusicConfig\\x22:\\x7b\\x22musicVideoType\\x22:\\x22MUSIC_VIDEO_TYPE_(.{3})\\x22\\x7d\\x7d\\x7d\\x7d\\x7d\\x5d\\x7d,\\x22displayPriority\\x22:\\x22MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH\\x22\\x7d\\x7d,\\x7b\\x22musicResponsiveListItemFlexColumnRenderer\\x22:\\x7b\\x22text\\x22:\\x7b\\x22runs\\x22:\\x5b\\x7b\\x22text\\x22:\\x22.{1,30}?\\x22\\x7d,\\x7b\\x22text\\x22:\\x22...\\x22\\x7d,\\x7b\\x22text\\x22:\\x22(.{1,101}?)\\x22,\\x22navigationEndpoint\\x22:\\x7b\\x22clickTrackingParams\\x22:\\x22.{1,50}?\\x3d\\x22,\\x22browseEndpoint\\x22:\\x7b\\x22browseId\\x22:\\x22.{1,50}?\\x22,\\x22browseEndpointContextSupportedConfigs\\x22:\\x7b\\x22browseEndpointContextMusicConfig\\x22:\\x7b\\x22pageType\\x22:\\x22MUSIC_PAGE_TYPE_ARTIST\\x22\\x7d\\x7d\\x7d\\x7d\\x7d,\\x7b\\x22text\\x22:\\x22...\\x22\\x7d,\\x7b\\x22text\\x22:\\x22(.{1,100})\\x22,\\x22navigationEndpoint\\x22:\\x7b\\x22clickTrackingParams}s);
+  # song1, id1, type1, band1, album1, song2, id2, type2, band2, album2, etc...
+
+  print "options length: " . @options . "\n";
+  
+  my $opti = 0;
+  say "$song from album $album -> ";
+  while ($options[$opti]) {
+    say "---$options[$opti] -> " . similarity($song, $options[$opti]) . "     ID: $options[$opti+1] type: $options[$opti+2]";
+    say "     " . sanitize_ytm_bs($options[$opti+4]) . " -> " . similarity($album, sanitize_ytm_bs($options[$opti+4]));
+    $opti += 5;
+  }
+  
 }
 
 sub get_track_listing {
-  #Takes a discogs album link string. Returns list of strings: names of tracks on album.
-  my $partial_album_link = shift;
+  state $last_call = 0;
+  my $artist = shift;
+  my $album = shift;
+  until ((time - $last_call) > 1.1) {sleep 0.1;}
+  $last_call = time;
+
+  my $artist_q = join '%20', (split / /, $artist);
+  my $album_q = join '%20', (split / /, $album);
+
+  # search with artist & album:
   my $query =
-    "curl \"https://www.discogs.com"
-    . $partial_album_link
-    . "\"";
-  my $res=`$query 2>&1`;
-#  open XXX, '>', "tracks.txt";
- # say XXX $res;
-  #close XXX;
-  $res =~ m{("tracks":.*?\])}si;
-  #say "Found " . $res . "\n";
-  my @tracks = ($1 =~ m{"name": "(.*?)"}sig);
-  foreach (@tracks) {say $_;}
+    "curl \"http://musicbrainz.org/ws/2/release-group?fmt=json&query=artist:\"$artist_q\"ANDrelease:\"$album_q\"&offset=0&limit=10\" -s";
+  my $art_rels = decode_json `$query 2>&1`;
+  # get release ids:
+  my $release_id = $art_rels->{"release-groups"}->[0]->{releases}->[0]->{id};
+
+  ### While we're here, let's get the correct artist and album titles as well:
+  $valid_artist = $art_rels->{"release-groups"}->[0]->{'artist-credit'}->[0]->{name};
+  $valid_album = $art_rels->{"release-groups"}->[0]->{title};
+  
+  # get tracks for release0:
+  until ((time - $last_call) > 1.1) {sleep 0.1;}
+  $last_call = time;
+  my $track_data = decode_json
+    `curl \"http://musicbrainz.org/ws/2/release/$release_id?&inc=recordings&fmt=json\" -s 2>&1`;
+
+  my $track_count = $track_data->{media}->[0]->{'track-count'};
+  my @tracks;
+  for (my $i=0; $i<$track_count; $i++) {
+    $_ = $track_data->{media}->[0]->{tracks}->[$i];
+    $tracks[$_->{position}-1] = $_->{title};
+  }
   @tracks;
 }
-
-sub get_discogs_ids {
-  my $whole_query =
-    "curl \"https://www.discogs.com/search/?limit=25&q="
-    . shift
-    . "&type=artist&layout=sm&page=1\"";
-  #print "querying for \"$query_string\"\n   with query : $whole_query\n";
-  my $res=`$whole_query 2>&1`; # curl outputs the useful stuff to STDERR
-  my @matches = ($res =~ m{href="/artist/(([0-9]+)-([^/]*?))"}ig); # url-line1 ID1 name1 url-line2 ID2 name2 etc..
-}
-
-sub list_discogs_albums {
-  my $whole_query =
-    "curl \"https://www.discogs.com/artist/"
-    . shift
-    . "?sort=year%2Casc&limit=500&type=Releases&subtype=Albums&filter_anv=0&layout=sm&page=1\"";
-  #print "\nAlbumquery is " . $whole_query . "\n\n";
-  my $res=`$whole_query 2>&1`;
-  my @album_list = ($res =~ m{<td class="artist"><a href=".*?">.*?</a>.*?<td class="title".*?(?:<span.*?</span>.*?)*<a href="(.*?)">(.*?)</a>.*?</td>}sig);
-  # That's (link_to_album album_name) etc..
-}
-
-
-
-
