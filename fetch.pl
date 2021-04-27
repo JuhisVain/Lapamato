@@ -110,7 +110,37 @@ sub query_ytm {
   say "with query: $query";
   #$1;
 
-  my @options = ($res =~ m{accessibilityData\\x22:\\x7b\\x22label\\x22:\\x22.{1,100}?\\x22\\x7d\\x7d\\x7d\\x7d,\\x22contentPosition\\x22:\\x22MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_CENTERED\\x22,\\x22displayStyle\\x22:\\x22MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_PERSISTENT\\x22\\x7d\\x7d,\\x22flexColumns\\x22:\\x5b\\x7b\\x22musicResponsiveListItemFlexColumnRenderer\\x22:\\x7b\\x22text\\x22:\\x7b\\x22runs\\x22:\\x5b\\x7b\\x22text\\x22:\\x22(.{1,100}?)\\x22,\\x22navigationEndpoint\\x22:\\x7b\\x22clickTrackingParams\\x22:\\x22.{1,100}?(?:\\x3d)+\\x22,\\x22watchEndpoint\\x22:\\x7b\\x22videoId\\x22:\\x22(.{5,20}?)\\x22,\\x22(?:playlistId\\x22:\\x22.{1,100}?\\x22,\\x22)?watchEndpointMusicSupportedConfigs\\x22:\\x7b\\x22watchEndpointMusicConfig\\x22:\\x7b\\x22musicVideoType\\x22:\\x22MUSIC_VIDEO_TYPE_(.{3})\\x22\\x7d\\x7d\\x7d\\x7d\\x7d\\x5d\\x7d,\\x22displayPriority\\x22:\\x22MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH\\x22\\x7d\\x7d,\\x7b\\x22musicResponsiveListItemFlexColumnRenderer\\x22:\\x7b\\x22text\\x22:\\x7b\\x22runs\\x22:\\x5b\\x7b\\x22text\\x22:\\x22.{1,30}?\\x22\\x7d,\\x7b\\x22text\\x22:\\x22...\\x22\\x7d,\\x7b\\x22text\\x22:\\x22(.{1,101}?)\\x22,\\x22navigationEndpoint\\x22:\\x7b\\x22clickTrackingParams\\x22:\\x22.{1,50}?\\x3d\\x22,\\x22browseEndpoint\\x22:\\x7b\\x22browseId\\x22:\\x22.{1,50}?\\x22,\\x22browseEndpointContextSupportedConfigs\\x22:\\x7b\\x22browseEndpointContextMusicConfig\\x22:\\x7b\\x22pageType\\x22:\\x22MUSIC_PAGE_TYPE_ARTIST\\x22\\x7d\\x7d\\x7d\\x7d\\x7d,\\x7b\\x22text\\x22:\\x22...\\x22\\x7d,\\x7b\\x22text\\x22:\\x22(.{1,100})\\x22,\\x22navigationEndpoint\\x22:\\x7b\\x22clickTrackingParams}s);
+#  open FIRST, '>', join('', (split / /,  $song));
+ # say FIRST $res;
+  #close FIRST;
+
+  my @options = ($res =~ m{accessibilityData\\x22:\\x7b\\x22label\\x22:\\x22.{1,100}?
+\\x22\\x7d\\x7d\\x7d\\x7d,\\x22contentPosition\\x22:\\x22
+MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_CENTERED\\x22,\\x22displayStyle\\x22:\\x22
+MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_PERSISTENT\\x22\\x7d\\x7d,\\x22flexColumns\\x22:\\x5b\\x7b\\x22
+musicResponsiveListItemFlexColumnRenderer\\x22:\\x7b\\x22text\\x22:\\x7b\\x22runs\\x22:\\x5b\\x7b\\x22text\\x22:\\x22
+(.{1,100}?) # SONG NAME
+\\x22,\\x22navigationEndpoint\\x22:\\x7b\\x22clickTrackingParams\\x22:\\x22.{1,100}?(?:\\x3d)+
+\\x22,\\x22watchEndpoint\\x22:\\x7b\\x22videoId\\x22:\\x22
+(.{5,20}?) # ID
+\\x22,\\x22(?:playlistId\\x22:\\x22.{1,100}?\\x22,\\x22)?watchEndpointMusicSupportedConfigs\\x22:\\x7b\\x22
+watchEndpointMusicConfig\\x22:\\x7b\\x22musicVideoType\\x22:\\x22
+MUSIC_VIDEO_TYPE_(.{3}) # TYPE
+\\x22\\x7d\\x7d\\x7d\\x7d\\x7d\\x5d\\x7d,\\x22displayPriority\\x22:\\x22
+MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH\\x22\\x7d\\x7d,\\x7b\\x22
+musicResponsiveListItemFlexColumnRenderer\\x22:\\x7b\\x22text\\x22:\\x7b\\x22
+runs\\x22:\\x5b\\x7b\\x22text\\x22:\\x22.{1,30}?
+\\x22\\x7d,\\x7b\\x22text\\x22:\\x22.{3,10}? # some kind of dot unicode thing
+\\x22\\x7d,\\x7b\\x22text\\x22:\\x22
+(.{1,101}?) # BAND
+\\x22,\\x22navigationEndpoint\\x22:\\x7b\\x22clickTrackingParams\\x22:\\x22.{1,50}?
+\\x3d\\x22,\\x22browseEndpoint\\x22:\\x7b\\x22browseId\\x22:\\x22.{1,50}?\\x22,\\x22
+browseEndpointContextSupportedConfigs\\x22:\\x7b\\x22browseEndpointContextMusicConfig
+\\x22:\\x7b\\x22pageType\\x22:\\x22
+MUSIC_PAGE_TYPE_ARTIST\\x22\\x7d\\x7d\\x7d\\x7d\\x7d,\\x7b\\x22text\\x22:\\x22.{3,10}? # some kind of dot again
+\\x22\\x7d,\\x7b\\x22text\\x22:\\x22
+(.{1,100}) # ALBUM
+\\x22,\\x22navigationEndpoint\\x22:\\x7b\\x22clickTrackingParams}xgs);
   # song1, id1, type1, band1, album1, song2, id2, type2, band2, album2, etc...
 
   print "options length: " . @options . "\n";
