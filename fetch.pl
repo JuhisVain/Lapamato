@@ -144,14 +144,19 @@ MUSIC_PAGE_TYPE_ARTIST\\x22\\x7d\\x7d\\x7d\\x7d\\x7d,\\x7b\\x22text\\x22:\\x22.{
   # song1, id1, type1, band1, album1, song2, id2, type2, band2, album2, etc...
 
   print "options length: " . @options . "\n";
-  
+
+  my @songopts;
   my $opti = 0;
-  say "$song from album $album -> ";
   while ($options[$opti]) {
-    say "---$options[$opti] -> " . similarity($song, $options[$opti]) . "     ID: $options[$opti+1] type: $options[$opti+2]";
-    say "     " . sanitize_ytm_bs($options[$opti+4]) . " -> " . similarity($album, sanitize_ytm_bs($options[$opti+4]));
+    my @sublist = @options[$opti,$opti+1,$opti+2,$opti+3,$opti+4];
+    push @songopts, \@sublist;
     $opti += 5;
   }
+  say "$songopts[0][0]";
+  say "$songopts[0][1]";
+  say "${$songopts[0]}[2]";
+  say "${$songopts[0]}[3]";
+  say "${$songopts[0]}[4]";
   
 }
 
