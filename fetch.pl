@@ -180,7 +180,15 @@ sub get_track_listing {
     "curl \"http://musicbrainz.org/ws/2/release-group?fmt=json&query=artist:\"$artist_q\"ANDrelease:\"$album_q\"&offset=0&limit=10\" -s";
   my $art_rels = decode_json `$query 2>&1`;
   # get release ids:
-  my $release_id = $art_rels->{"release-groups"}->[0]->{releases}->[0]->{id};
+
+  # Search for Album primary-type:
+  my $release_id;
+  for (my $i=0; $i<10; $i++) {
+    if ($art_rels->{"release-groups"}->[$i]->{"primary-type"} eq 'Album') {
+      $release_id = $art_rels->{"release-groups"}->[$i]->{releases}->[0]->{id};
+      last;
+    }
+  }
 
   ### While we're here, let's get the correct artist and album titles as well:
   $valid_artist = $art_rels->{"release-groups"}->[0]->{'artist-credit'}->[0]->{name};
