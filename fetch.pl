@@ -98,6 +98,7 @@ sub sanitize_ytm_bs {
 #Returns videoid:
 sub query_ytm {
   my ($artist, $album, $song) = @_; # album has been sanitized
+  state $last_call = 0;
   say "query_ytm with $artist $album $song";
   my $query =
     "curl \"https://music.youtube.com/search?q="
@@ -105,6 +106,10 @@ sub query_ytm {
     . join('+', (split / /,  $album)) . "+"
     . join('+', (split / /,  $song))
     . "\" -A \"Mozilla/5.0 (X11; Linux x86_64; rv:86.0) Gecko/20100101 Firefox/86.0\"";
+
+  until ((time - $last_call) > 1.1) {sleep 0.1;}
+  $last_call = time;
+  
   my $res=`$query 2>&1`;
   #$res =~ m{$ytm_songs_block_id.*?videoID\\x22:\\x22(.*?)\\x22}is;
   say "with query: $query";
