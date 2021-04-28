@@ -157,12 +157,30 @@ MUSIC_PAGE_TYPE_ARTIST\\x22\\x7d\\x7d\\x7d\\x7d\\x7d,\\x7b\\x22text\\x22:\\x22.{
     push @songopts, \@sublist;
     $opti += 5;
   }
-  say "$songopts[0][0]";
-  say "$songopts[0][1]";
-  say "${$songopts[0]}[2]";
-  say "${$songopts[0]}[3]";
-  say "${$songopts[0]}[4]";
+
+  @songopts = grep {$_->[2] eq 'ATV'} @songopts; # filter out videos
+  @songopts = sort {
+    opt_similarity($b, $song, $album, $artist) <=> opt_similarity($a, $song, $album, $artist);
+  } @songopts;
+
+  say "Searching for: $artist - $song / $album";
   
+#  foreach (@songopts) {
+#    say $_->[3].' - '.$_->[0].' / '.$_->[4];
+#  }
+  $songopts[0][1];
+}
+
+sub opt_similarity {
+  my ($opt, $song, $album, $artist) = @_;
+  my $song_weight = 10;
+  my $album_weight = 10;
+  my $artist_weight = 10;
+  my $total_weight = $song_weight+$album_weight+$artist_weight;
+  my $sos = similarity($opt->[0], $song) * $song_weight;
+  my $als = similarity($opt->[4], $album) * $album_weight;
+  my $ars = similarity($opt->[3], $artist) * $artist_weight;
+  return ($sos + $als + $ars) / $total_weight;
 }
 
 sub get_track_listing {
